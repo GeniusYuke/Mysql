@@ -143,5 +143,174 @@ SELECT customers.cust_name, customers.cust_id, COUNT(orders.order_num) AS num_or
 ```
 ## 17 组合查询
 ```
-
+SELECT vend_id, prod_id, prod_price FROM products WHERE prod_price <= 5 UNION SELECT vend_id, prod_id, prod_price FROM products WHERE vend_id IN (1001, 1002);  //用UNION组合两个SELECT
+SELECT vend_id, prod_id, prod_price FROM products WHERE prod_price <= 5 OR vend_id IN (1001, 1002);     //WHERE等同于UNION
+SELECT vend_id, prod_id, prod_price FROM products WHERE prod_price <= 5 UNION ALL SELECT vend_id, prod_id, prod_price FROM products WHERE vend_id IN (1001, 1002);  //UNION ALL显示重复行
+SELECT vend_id, prod_id, prod_price FROM products WHERE prod_price <= 5 UNION SELECT vend_id, prod_id, prod_price FROM products WHERE vend_id IN (1001, 1002) ORDER BY vend_id, prod_id;
+```
+## 18 全文本搜索
+```
+//并非所有引擎都支持全文本搜索，InnoDB不支持，MyISAM支持
+//布尔文本搜索结果不按等级排序
+//文本搜索时短词被忽略
+SELECT note_text FROM productnotes WHERE Match(note_text) Against('rabbit');    //全文本搜索结果会按搜索匹配等级进行排序
+SELECT note_text FROM productnotes WHERE note_text LIKE '%rabbit%';
+SELECT note_text, match(note_text) against('rabbit') AS rand FROM productnotes; //出现在越前等级越高，出现次数越多等级越高
+SELECT note_text FROM productnotes WHERE match(note_text) against('anvils' WITH QUERY EXPANSION);   //查询扩展能找出可能相关的结果，比如只有一行有anvils，查询扩展找的的行里面包含匹配那行里面的其他的词
+SELECT note_text FROM productnotes WHERE match(note_text) against('heavy' IN BOOLEAN MODE); //布尔文本搜索在没有定义FULLTEXT时也可以使用
+SELECT note_text FROM productnotes WHERE match(note_text) against('heavy -rope*' IN BOOLEAN MODE);  //匹配heavy，但排除以rope开始的词的行
+SELECT note_text FROM productnotes WHERE match(note_text) against('+rabbit +bait' IN BOOLEAN MODE); //匹配包含rabbit和bait的行
+SELECT note_text FROM productnotes WHERE match(note_text) against('rabbit bait' IN BOOLEAN MODE);   //匹配包含rabbit或bait的行
+SELECT note_text FROM productnotes WHERE match(note_text) against('"rabbit bait"' IN BOOLEAN MODE); //匹配包含rabbit bait的行
+SELECT note_text FROM productnotes WHERE match(note_text) against('>rabbit <carrot' IN BOOLEAN MODE);   //匹配rabbit或者carrot的行，增加前者的等级，降低后者等级
+SELECT note_text FROM productnotes WHERE match(note_text) against('+safe +(<combination)' IN BOOLEAN MODE); //匹配包含safe和cambination的行，增加前者等级，降低后者等级
+```
+## 19 插入数据
+```
+INSERT INTO customers VALUES(NULL, 'Pep E. LaPew', '100 Main Street', 'Los Angeles', 'CA', '90046', 'USA', NULL, NULL); //cust_id为NULL，表示使用默认值，这种方式的插入需要指定所有列值
+INSERT INTO customers(cust_name, cust_address, cust_city, cust_state, cust_zip, cust_country, cust_contact, cust_email) VALUES('Pep E. LaPew', '100 Main Street', 'Los Angeles', 'CA', '90046', 'USA', NULL, NULL); //这种方式的插入只需要指定部分列值
+INSERT INTO customers(cust_id, cust_name, cust_address, cust_city, cust_state, cust_zip, cust_country, cust_contact, cust_email) SELECT cust_id, cust_name, cust_address, cust_city, cust_state, cust_zip, cust_country, cust_contact, cust_email FROM custnew; //从别的表select数据插入
+```
+## 20 更新和删除数据
+```
+UPDATE customers SET cust_email = 'elmer@fudd.com' WHERE cust_id =10005;    //更新或者删除数据需要使用WHERE否则就会更新所有行
+UPDATE customers SET cust_name = 'The Fudds', cust_email = 'elmer@fudd.com' WHERE cust_id =10005;
+UPDATE customers SET cust_email = NULL WHERE cust_id = 10005;
+DELETE FROM customers WHERE cust_id = 10007;    //删除所有行可以使用TRUNCATE TABLE
+```
+## 21 创建和操纵表
+```
+CREATE TABLE custnew
+(
+  cust_id      int       NOT NULL AUTO_INCREMENT,
+  cust_name    char(50)  NOT NULL DEFAULT 'ZHOU',
+  cust_address char(50)  NULL ,
+  cust_city    char(50)  NULL ,
+  cust_state   char(5)   NULL ,
+  cust_zip     char(10)  NULL ,
+  cust_country char(50)  NULL ,
+  cust_contact char(50)  NULL ,
+  cust_email   char(255) NULL ,
+  PRIMARY KEY (cust_id)
+) ENGINE=InnoDB;
+//InnoDB是一个可靠的事务处理引擎，不支持全文本搜索
+//MEMORY在功能等同于MyISAM，但由于数据存储在内存中，速度很快，特别适合于临时表
+//MyISAM是一个性能极高的引擎，支持全文本搜索，但不支持事务处理
+ALTER TABLE vendors ADD vend_phone CHAR(20);    //修改表
+ALTER TABLE vendors DROP COLUMN vend_phone ;
+ALTER TABLE orderitems ADD CONSTRAINT fk_orderitems_orders FOREIGN KEY (order_num) REFERENCES orders (order_num);   //添加外键
+ALTER TABLE orderitems ADD CONSTRAINT fk_orderitems_products FOREIGN KEY (prod_id) REFERENCES products (prod_id);
+ALTER TABLE orders ADD CONSTRAINT fk_orders_customers FOREIGN KEY (cust_id) REFERENCES customers (cust_id);
+ALTER TABLE products ADD CONSTRAINT fk_products_vendors FOREIGN KEY (vend_id) REFERENCES vendors (vend_id);
+DROP TABLE customers;   //删除表    
+RENAME TABLE customers2 TO customers;   //重命名表
+```
+## 22 使用视图
+```
+CREATE VIEW productcustomers AS SELECT cust_name, cust_contact, prod_id FROM  customers, orders, orderitems WHERE customers.cust_id = orders.cust_id AND orderitems.order_num = orders.order_num;
+SELECT cust_name, cust_contact FROM productcustomers WHERE prod_id = 'TNT2';
+CREATE VIEW vendorlocations AS SELECT Concat(RTrim(vend_name), '(', RTrim(vend_country), ')') AS vend_title FROM vendors ORDER BY vend_name;
+SELECT * FROM vendorlocations;
+CREATE VIEW customeremaillist AS SELECT cust_id, cust_name, cust_email FROM customers WHERE cust_email IS NOT NULL;
+SELECT * FROM  customeremaillist;
+```
+## 23 使用存储过程
+```
+//MYSQL中需要临时更改命令行实用程序的语句分隔符，此时分隔符是//
+DELIMITER //
+CREATE PROCEDURE productpricing()
+BEGIN	 
+	SELECT Avg(prod_price) AS priceaverage FROM products;
+END//
+DELIMITER ;
+CALL productpricing();  //调用存储过程
+DROP PROCEDURE ordertotal;  //删除存储过程
+//OUT为存储过程的输出参数，IN为存储过程的输入参数
+DELIMITER //
+CREATE PROCEDURE productpricing(OUT pi DECIMAL(8,2), OUT ph DECIMAL(8,2), OUT pa DECIMAL(8,2))
+BEGIN	 
+	SELECT Avg(prod_price) INTO pa FROM products;
+	SELECT Min(prod_price) INTO pi FROM products;
+	SELECT Max(prod_price) INTO ph FROM products;
+END//
+CREATE PROCEDURE ordertotal(IN onumber INT, OUT ototal DECIMAL(8,2))
+BEGIN	 
+	SELECT Sum(item_price*quantity) FROM orderitems WHERE order_num = onumber INTO ototal;
+END//
+DELIMITER ;
+CALL productpricing(@pricelow, @pricehigh, @priceaverage);
+SELECT @pricehigh, @pricelow, @priceaverage;
+CALL ordertotal(20005, @total);
+SELECT @total;
+-- Name: ordertotal
+-- Parameters: onumber = order number
+--			   taxable = 0 if not taxable, 1 if taxable
+--   		   ototal  = order total variable
+DELIMITER //
+CREATE PROCEDURE ordertotal(IN onumber INT, IN taxable BOOLEAN, OUT ototal DECIMAL(8,2)) COMMENT 'Obtain order total, optionally adding tax'
+BEGIN
+	-- Declare variable for total
+    DECLARE total DECIMAL(8,2);
+    -- Declare tax percentage
+    DECLARE taxrate INT DEFAULT 6;
+    
+    -- Get the order total
+    SELECT Sum(item_price*quantity) FROM orderitems WHERE order_num = onumber INTO total;
+    -- Is this taxable?
+	IF taxable THEN
+		-- Yex, so add taxrate to the total
+        SELECT total+(total/100*taxrate) INTO total;
+	END IF;
+    -- And finally, save to out variable
+    SELECT total INTO ototal;
+END//
+DELIMITER ;
+CALL ordertotal(20005, 0, @total);
+SELECT @total;
+CALL ordertotal(20005, 1, @total);
+SELECT @total;
+SHOW CREATE PROCEDURE ordertotal;
+SHOW PROCEDURE STATUS;
+```
+## 24 使用游标
+```
+DELIMITER //
+CREATE PROCEDURE processorders()
+BEGIN
+	-- Declare local variables
+    DECLARE done BOOLEAN DEFAULT 0;
+    DECLARE o INT;
+    DECLARE t DECIMAL(8,2);
+    
+	-- Declare the cursor
+	DECLARE ordernumbers CURSOR
+    FOR
+	SELECT order_num FROM orders;
+    -- Declare continue handler
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET done=1;
+    
+    -- Create a table to store the results
+    CREATE TABLE IF NOT EXISTS ordertotals
+		(order_num INT, total DECIMAL(8,2));
+        
+    -- Open the cursor
+    OPEN ordernumbers;
+    -- Loop through all rows
+    REPEAT
+		
+		-- Get order number
+		FETCH ordernumbers INTO o;
+		
+        -- Get the total for this order
+        CALL ordertotal(o,1,t);
+        
+        -- Insert order and total into ordertotals
+        INSERT INTO ordertotals(order_num, total) VALUES(o, t);
+    
+    -- End of loop
+    UNTIL done END REPEAT;
+    
+    -- Close the cursor
+    CLOSE ordernumbers;
+END//
 ```
