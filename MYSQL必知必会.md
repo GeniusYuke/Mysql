@@ -324,5 +324,25 @@ DROP TRIGGER newproduct;
 ```
 ## 26 管理事务处理
 ```
-
+//事务处理是一种机制，用来管理必须成批处理的MySQL操作，要么作为整体执行，要么完全不执行，以保证数据操作完整性
+//ROLLBACK可以回退INSERT UPDATE DELETE，但是不能回退CREATE DROP
+SELECT * FROM ordertotals;
+START TRANSACTION;  //开始事务处理
+SET SQL_SAFE_UPDATES = 0;   //设置update safe mode，使得能不使用where 和主键来删除表中的行
+DELETE FROM ordertotals;
+SELECT * FROM ordertotals;
+ROLLBACK;   //回退MySQL语句
+START TRANSACTION;
+DELETE FROM orderitems WHERE order_num = 20010;
+DELETE FROM orders WHERE order_num = 20010;
+COMMIT;     //当COMMIT或ROLLBACK语句执行后，事务会自动关闭
+SAVEPOINT delete1;      //占位符
+ROLLBACK TO delete1;    //回退到保留点，在ROLLBACK或者COMMIT之后自动释放
+```
+## 27 全球化和本地化
+```
+SHOW CHARACTER SET; //查看支持的字符集列表
+SHOW COLLATION;     //查看支持的校对集列表
+SHOW VARIABLES LIKE 'character%';   //查看现在使用的字符
+SHOW VARIABLES LIKE 'collation%';   //查看现在使用的校对
 ```

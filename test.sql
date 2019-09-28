@@ -229,7 +229,22 @@ CREATE TRIGGER neworder AFTER INSERT ON orders FOR EACH ROW SELECT NEW.order_num
 INSERT INTO orders(order_date, cust_id) VALUES(Now(), 10001);
 DROP TRIGGER neworder;
 select * from orders;
-
+SELECT * FROM ordertotals;
+START TRANSACTION;
+SET SQL_SAFE_UPDATES = 0;
+DELETE FROM ordertotals;
+SELECT * FROM ordertotals;
+ROLLBACK;
+SELECT * FROM ordertotals;
+START TRANSACTION;
+DELETE FROM orderitems WHERE order_num = 20010;
+DELETE FROM orders WHERE order_num = 20010;
+COMMIT;
+SHOW CHARACTER SET;
+SHOW COLLATION;
+SHOW VARIABLES LIKE 'character%';
+SHOW VARIABLES LIKE 'collation%';
+CREATE TABLE mytable(columnn1 INT, columnn2 VARCAHR(10)) DEFAULT CHARACTER SET hebrew COLLATE hebrew_general_ci;
 
 
 
