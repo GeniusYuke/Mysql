@@ -213,8 +213,7 @@ BEGIN
         CALL ordertotal(o,1,t);
         
         -- Insert order and total into ordertotals
-        INSERT INTO ordertotals(order_num, total)
-        VALUES(o, t);
+        INSERT INTO ordertotals(order_num, total) VALUES(o, t);
     
     -- End of loop
     UNTIL done END REPEAT;
@@ -223,11 +222,13 @@ BEGIN
     CLOSE ordernumbers;
 END//
 DELIMITER ;
-DROP TABLE ordertotals;
+select * from orderitems;
 CALL processorders();
 SELECT * FROM ordertotals;
-
-
+CREATE TRIGGER neworder AFTER INSERT ON orders FOR EACH ROW SELECT NEW.order_num into @args;
+INSERT INTO orders(order_date, cust_id) VALUES(Now(), 10001);
+DROP TRIGGER neworder;
+select * from orders;
 
 
 

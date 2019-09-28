@@ -283,11 +283,11 @@ BEGIN
     DECLARE t DECIMAL(8,2);
     
 	-- Declare the cursor
-	DECLARE ordernumbers CURSOR
+	DECLARE ordernumbers CURSOR //声明游标，变量的声明要在游标和句柄之前
     FOR
 	SELECT order_num FROM orders;
     -- Declare continue handler
-    DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET done=1;
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET done=1;   //声明句柄，SQLSTATE '02000'当REPEAT没有更多的行供循环时出现。
     
     -- Create a table to store the results
     CREATE TABLE IF NOT EXISTS ordertotals
@@ -302,15 +302,27 @@ BEGIN
 		FETCH ordernumbers INTO o;
 		
         -- Get the total for this order
-        CALL ordertotal(o,1,t);
+        CALL ordertotal(o,1,t);     //调用另一个计算订单总价的存储过程
         
         -- Insert order and total into ordertotals
-        INSERT INTO ordertotals(order_num, total) VALUES(o, t);
+        INSERT INTO ordertotals(order_num, total) VALUES(o, t); //在表中插入数据
     
     -- End of loop
-    UNTIL done END REPEAT;
+    UNTIL done END REPEAT;  //当done为1时停止REPEAT
     
     -- Close the cursor
     CLOSE ordernumbers;
 END//
+```
+## 25 使用触发器
+```
+//BEFORE触发器失败，将不会执行请求的的操作
+//触发器仅支持表，每个表最多支持六个触发器
+CREATE TRIGGER neworder AFTER INSERT ON orders FOR EACH ROW SELECT NEW.order_num into @args;    //引用名为NEW的虚拟的表，访问被插入的行
+INSERT INTO orders(order_date, cust_id) VALUES(Now(), 10001);   //NOW()中为现在的参数值，NEW.order_num为20010
+DROP TRIGGER newproduct;
+```
+## 26 管理事务处理
+```
+
 ```
