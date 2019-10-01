@@ -346,3 +346,27 @@ SHOW COLLATION;     //查看支持的校对集列表
 SHOW VARIABLES LIKE 'character%';   //查看现在使用的字符
 SHOW VARIABLES LIKE 'collation%';   //查看现在使用的校对
 ```
+## 28 安全管理
+```
+USE mysql;  //mysql数据库中存储着用户信息
+SELECT user FROM user;  //查看所有的用户
+CREATE USER ben IDENTIFIED BY 'zhou123qaz'; //创建用户
+RENAME USER ben TO bforta;  /给用户重命名
+DROP USER bforta;
+SHOW GRANTS FOR bforta; //查看用户权限
+GRANT SELECT ON crashcourse.* TO bforta;    //给用户设置权限
+REVOKE SELECT ON crashcourse.* FROM bforta; //取消用户的权限
+SET PASSWORD FOR bforta = Password('zhou123QAZ');   //设置用户的密码
+
+```
+## 29 数据库维护
+```
+//错误日志，查询日志，二进制日志，缓慢查询日志
+ANALYZE TABLE orders;
+CHECK TABLE orders, orderitems;
+```
+## 30 改善性能
+```
+//存储过程执行得比一条一套地执行其中的各条语句快
+//LIKE很慢，最好用FULLTEXT
+```

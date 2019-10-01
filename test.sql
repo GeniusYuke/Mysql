@@ -245,8 +245,17 @@ SHOW COLLATION;
 SHOW VARIABLES LIKE 'character%';
 SHOW VARIABLES LIKE 'collation%';
 CREATE TABLE mytable(columnn1 INT, columnn2 VARCAHR(10)) DEFAULT CHARACTER SET hebrew COLLATE hebrew_general_ci;
-
-
+USE mysql;
+SELECT user FROM user;
+CREATE USER ben IDENTIFIED BY 'zhou123qaz';
+RENAME USER ben TO bforta;
+DROP USER bforta;
+SHOW GRANTS FOR bforta;
+GRANT SELECT ON crashcourse.* TO bforta;
+REVOKE SELECT ON crashcourse.* FROM bforta;
+SET PASSWORD FOR bforta = Password('zhou123QAZ');
+ANALYZE TABLE orders;
+CHECK TABLE orders, orderitems;
 
 
 
